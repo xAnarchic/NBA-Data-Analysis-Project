@@ -2,7 +2,7 @@ import requests
 from nba_api.stats.endpoints import playercareerstats, playerindex
 from nba_api.stats.static import players
 
-#testing commits3
+#testing commits3hello
 
 response = requests.post(url = "https://v2.nba.api-sports.io")
 response.raise_for_status()
