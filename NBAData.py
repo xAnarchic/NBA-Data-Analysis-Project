@@ -1,5 +1,5 @@
 from pprint import pprint
-from nba_api.stats.endpoints import playercareerstats, playerindex, homepageleaders, leaguedashteamstats
+from nba_api.stats.endpoints import playercareerstats, playerindex, homepageleaders, leaguedashteamstats, leaguedashptstats, leaguedashteamshotlocations
 from nba_api.stats.static import players
 import pandas as pd
 from scipy import stats
@@ -45,10 +45,10 @@ def team_stats():
     df = teams.get_data_frames()[0]
     ranksdf = df.get(['TEAM_NAME', 'PTS', 'AST', 'REB', 'STL','BLK','TOV', 'W'])
     sorteddf = ranksdf.sort_values(by = 'W', ascending = False)
+    alpha_sorteddf = ranksdf.sort_values(by = 'TEAM_NAME', ascending = True)
+    alpha_to_sorteddf = alpha_sorteddf.get('TOV')
     n_array = sorteddf.to_numpy()
-
-    sorteddf1 = ranksdf.sort_values(by = 'REB', ascending = False)
-    print(sorteddf1)
+    alpha_to_n_array = alpha_to_sorteddf.to_numpy()
 
     wins= []
     points = []
@@ -86,4 +86,50 @@ def team_stats():
     t_res = stats.spearmanr(wins, turnovers)
     print(f'Turnovers: \n Spearman correlation coefficient= {round(t_res.statistic, 5)} \n p-value = {round(t_res.pvalue, 5)}')
 
+    return {'Assists': assists, 'Turnovers': turnovers, 'Wins': wins, 'Turnovers by alpha' : alpha_to_n_array}
+
+assists_list = team_stats()['Assists']
+turnovers_list = team_stats()['Turnovers']
+wins_list = team_stats()['Wins']
+alpha_turnovers_list = team_stats()['Turnovers by alpha']
+
+
+def turnover_analysis(assists, turnovers, wins, alpha_turnovers):
+
+    ind = -1
+    ast_to_ratio_list = []
+    for ast in assists:
+        ind += 1
+        ast_to_ratio = (ast / turnovers[ind])
+        ast_to_ratio_list.append(ast_to_ratio)
+
+    ast_to_ratio_res = stats.spearmanr(wins, ast_to_ratio_list)
+    print(f'Assists-to-Turnover ratio: \n Spearman correlation coefficient= {round(ast_to_ratio_res.statistic, 5)} \n p-value = {round(ast_to_ratio_res.pvalue, 5)}')
+
+    ast_to_res = stats.spearmanr(turnovers, assists)
+    print(f'Assists-Turnover correlation: \n Spearman correlation coefficient= {round(ast_to_res.statistic, 5)} \n p-value = {round(ast_to_res.pvalue, 5)}')
+
+    team_pace = leaguedashptstats.LeagueDashPtStats()
+    pace_df = team_pace.get_data_frames()[0]
+    pace_df = pace_df.sort_values(by = 'W', ascending = False)
+    off_pace_df = pace_df.get('AVG_SPEED_OFF')
+    off_pace = off_pace_df.to_numpy()
+
+    off_pace_to_res = stats.spearmanr(turnovers, off_pace)
+    print(f'Offensive pace-Turnover correlation: \n Spearman correlation coefficient= {round(off_pace_to_res.statistic, 5)} \n p-value = {round(off_pace_to_res.pvalue, 5)}')
+
+    team_shot_loc = leaguedashteamshotlocations.LeagueDashTeamShotLocations()
+    team_shot_loc_df = team_shot_loc.get_data_frames()[0]
+    team_shot_loc_df = team_shot_loc_df.get(('Restricted Area','FGA'))
+    ra_shots_made = team_shot_loc_df.to_numpy()
+
+    ra_shots_to_res = stats.spearmanr(alpha_turnovers, ra_shots_made)
+    print(f'Restricted area shots-Turnover correlation: \n Spearman correlation coefficient= {round(ra_shots_to_res.statistic, 5)} \n p-value = {round(ra_shots_to_res.pvalue, 5)}')
+
+    #add the different kinds of 3's
+
     return
+
+turnover_analysis(assists_list, turnovers_list, wins_list, alpha_turnovers_list)
+
+#Use the homepageleaders endpoint to perform the points -> FT analysis
