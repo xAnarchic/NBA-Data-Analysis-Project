@@ -4,8 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="More analysis">
+    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="Some MLR">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NBAData.py" beforeDir="false" afterPath="$PROJECT_DIR$/NBAData.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -46,16 +47,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Python.NBAData.executor": "Run",
-    "Python.Scrap code.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "C:/Users/AminD/PycharmProjects/NBA-Data-Analysis-Project"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Python.NBAData.executor&quot;: &quot;Run&quot;,
+    &quot;Python.Scrap code.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/AminD/PycharmProjects/NBA-Data-Analysis-Project&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\AminD\PycharmProjects\NBA-Data-Analysis-Project" />
@@ -182,13 +183,22 @@
       <option name="project" value="LOCAL" />
       <updated>1741816932763</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="Some MLR">
+      <option name="closed" value="true" />
+      <created>1741839100558</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1741839100558</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="Testing commit" />
     <MESSAGE value="Testing commit2" />
     <MESSAGE value="More analysis" />
-    <option name="LAST_COMMIT_MESSAGE" value="More analysis" />
+    <MESSAGE value="Some MLR" />
+    <option name="LAST_COMMIT_MESSAGE" value="Some MLR" />
   </component>
 </project>
