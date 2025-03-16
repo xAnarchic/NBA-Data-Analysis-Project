@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="Some MLR">
+    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="Further MLR">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NBAData.py" beforeDir="false" afterPath="$PROJECT_DIR$/NBAData.py" afterDir="false" />
     </list>
@@ -191,7 +191,15 @@
       <option name="project" value="LOCAL" />
       <updated>1741839100558</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="Further MLR">
+      <option name="closed" value="true" />
+      <created>1742012149917</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1742012149917</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -199,6 +207,7 @@
     <MESSAGE value="Testing commit2" />
     <MESSAGE value="More analysis" />
     <MESSAGE value="Some MLR" />
-    <option name="LAST_COMMIT_MESSAGE" value="Some MLR" />
+    <MESSAGE value="Further MLR" />
+    <option name="LAST_COMMIT_MESSAGE" value="Further MLR" />
   </component>
 </project>
