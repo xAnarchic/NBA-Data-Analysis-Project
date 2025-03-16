@@ -561,5 +561,4 @@ def turnover_analysis(assists, turnovers, wins, alpha_turnovers):
 
 # turnover_analysis(assists_list, turnovers_list, wins_list, alpha_turnovers_list)
 
-
 #Trying to check out previous league stats
