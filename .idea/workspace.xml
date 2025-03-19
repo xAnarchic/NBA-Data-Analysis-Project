@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="Further MLR">
+    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="Additional variables">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/NBAData.py" beforeDir="false" afterPath="$PROJECT_DIR$/NBAData.py" afterDir="false" />
     </list>
@@ -47,16 +47,17 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;Python.NBAData.executor&quot;: &quot;Run&quot;,
-    &quot;Python.Scrap code.executor&quot;: &quot;Run&quot;,
-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
-    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
-    &quot;last_opened_file_path&quot;: &quot;C:/Users/AminD/PycharmProjects/NBA-Data-Analysis-Project&quot;
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Python.NBAData.executor": "Run",
+    "Python.Scrap code.executor": "Run",
+    "Python.nba two.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "C:/Users/AminD/PycharmProjects/NBA-Data-Analysis-Project/.venv/Scripts/nba two.py"
   }
-}</component>
+}]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\AminD\PycharmProjects\NBA-Data-Analysis-Project" />
@@ -66,7 +67,7 @@
     </key>
   </component>
   <component name="RunManager">
-    <configuration name="NBAData" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="nba two" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="NBA-Data-Analysis-Project" />
       <option name="ENV_FILES" value="" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -80,7 +81,7 @@
       <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/.venv/Scripts/NBAData.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/.venv/Scripts/nba two.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -91,7 +92,7 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.NBAData" />
+        <item itemvalue="Python.nba two" />
       </list>
     </recent_temporary>
   </component>
@@ -199,7 +200,23 @@
       <option name="project" value="LOCAL" />
       <updated>1742012149917</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="Further MLR">
+      <option name="closed" value="true" />
+      <created>1742165426162</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1742165426162</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Additional variables">
+      <option name="closed" value="true" />
+      <created>1742165470746</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1742165470746</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -208,6 +225,7 @@
     <MESSAGE value="More analysis" />
     <MESSAGE value="Some MLR" />
     <MESSAGE value="Further MLR" />
-    <option name="LAST_COMMIT_MESSAGE" value="Further MLR" />
+    <MESSAGE value="Additional variables" />
+    <option name="LAST_COMMIT_MESSAGE" value="Additional variables" />
   </component>
 </project>
