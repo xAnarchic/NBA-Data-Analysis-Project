@@ -1,51 +1,13 @@
-from pprint import pprint
-from nba_api.stats.endpoints import playercareerstats, playerindex, homepageleaders, leaguedashteamstats, leaguedashptstats, leaguedashteamshotlocations, leaguedashteamclutch, leaguedashteamptshot, teamestimatedmetrics, leaguedashptteamdefend, leaguestandingsv3
-from nba_api.stats.static import players
+from nba_api.stats.endpoints import leaguedashteamstats, leaguedashteamptshot, teamestimatedmetrics, leaguedashptteamdefend, leaguestandingsv3
 import pandas as pd
 import numpy as np
 from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-from sklearn.metrics import r2_score, mean_squared_error, root_mean_squared_error, max_error, accuracy_score
+from sklearn.metrics import r2_score, root_mean_squared_error, max_error, accuracy_score
 import matplotlib.pyplot as plt
-import time
 import seaborn as sns
-import statsmodels
 import mysql.connector
-
-#Numbers all players that have participated in the NBA.
-def all_players():
-
-    all_players_historic = players.get_players()
-    number_of_players = len(all_players_historic)
-
-    for num in range(number_of_players):
-        player_num = num + 1
-        player_name = all_players_historic[num]['full_name']
-        print(player_name, num)
-
-    return print(all_players_historic[-1]['full_name'])
-
-#Returns players (and teams) with a certain PTS/ AST/ REB statline.
-def players_by_current_stats():
-
-    players = playerindex.PlayerIndex(season = 2024)
-    df = players.get_data_frames()[0]
-    print('How many points should these players be averaging?')
-    pts = int(input())
-    print('How many assists should these players be averaging?')
-    ast = int(input())
-    print('How many rebounds should these players be averaging?')
-    reb = int(input())
-
-    df = df.loc[(df['PTS'] > pts) & (df['AST'] > ast) & (df['REB'] > reb) ]
-    df = df.sort_values(by = 'PTS', ascending = False)
-    playerlist = []
-    for i, player in enumerate(df.to_numpy()):
-        playerlist.append({
-            player[3]:player[7] + ' ' + player[8]
-        })
-    return pprint(playerlist)
 
 #Exploring core stats (PTS, AST, REB, STL, BLK) and turnovers (TO) of teams in the 2024-25 season.
 def team_stats(season):
@@ -63,9 +25,6 @@ def teams_points_df(season):
     points_df = points_df.sort_values(by = 'TEAM_NAME', ascending = True)
     points_df = points_df.get(['TEAM_NAME', 'FG3A', 'EFG_PCT', 'FG_PCT', 'FG3_PCT', 'FG2A', 'FG2_PCT'])
 
-    wins_l = []
-    ft_pct_l = []
-    ft_a_l = []
 
     return points_df
 
@@ -174,7 +133,6 @@ def correlations(pts_list, ast_list, reb_list, stl_list, blk_list, to_list, fg3a
     return
 
 
-
 def multiple_linear_regression_model(fg3a_list, fgpct_list, fg3pct_list, ftpct_list, fta_list, reb_list, ast_list, stl_list, blk_list, fg2a_list, fg2pct_list, wins_list):
 
     data = pd.DataFrame([fg3a_list, efgpct_list, ftpct_list, fta_list, fg2a_list, ast_list, reb_list, stl_list, blk_list])
@@ -227,45 +185,6 @@ def multiple_linear_regression_model(fg3a_list, fgpct_list, fg3pct_list, ftpct_l
     print(f'Accuracy score testing data: {acc_score_test}')
 
     return
-
-
-
-def turnover_analysis(assists, turnovers, wins, alpha_turnovers):
-
-    ind = -1
-    ast_to_ratio_list = []
-    for ast in assists:
-        ind += 1
-        ast_to_ratio = (ast / turnovers[ind])
-        ast_to_ratio_list.append(ast_to_ratio)
-
-    ast_to_ratio_res = stats.spearmanr(wins, ast_to_ratio_list)
-    print(f'Assists-to-Turnover ratio: \n Spearman correlation coefficient= {round(ast_to_ratio_res.statistic, 5)} \n p-value = {round(ast_to_ratio_res.pvalue, 5)}')
-
-    ast_to_res = stats.spearmanr(turnovers, assists)
-    print(f'Assists-Turnover correlation: \n Spearman correlation coefficient= {round(ast_to_res.statistic, 5)} \n p-value = {round(ast_to_res.pvalue, 5)}')
-
-    team_pace = leaguedashptstats.LeagueDashPtStats()
-    pace_df = team_pace.get_data_frames()[0]
-    pace_df = pace_df.sort_values(by = 'W', ascending = False)
-    off_pace_df = pace_df.get('AVG_SPEED_OFF')
-    off_pace = off_pace_df.to_numpy()
-
-    off_pace_to_res = stats.spearmanr(turnovers, off_pace)
-    print(f'Offensive pace-Turnover correlation: \n Spearman correlation coefficient= {round(off_pace_to_res.statistic, 5)} \n p-value = {round(off_pace_to_res.pvalue, 5)}')
-
-    team_shot_loc = leaguedashteamshotlocations.LeagueDashTeamShotLocations()
-    team_shot_loc_df = team_shot_loc.get_data_frames()[0]
-    team_shot_loc_df = team_shot_loc_df.get(('Restricted Area','FGA'))
-    ra_shots_made = team_shot_loc_df.to_numpy()
-
-    ra_shots_to_res = stats.spearmanr(alpha_turnovers, ra_shots_made)
-    print(f'Restricted area shots-Turnover correlation: \n Spearman correlation coefficient= {round(ra_shots_to_res.statistic, 5)} \n p-value = {round(ra_shots_to_res.pvalue, 5)}')
-
-
-
-    return
-
 
 
 #Gathering current season data and importing into mySQL Workbench
@@ -504,5 +423,3 @@ team_names_insertions(db_conn, teams_df)
 points_insertions(db_conn, points_df)
 stats_insertions(db_conn, stats_df)
 defense_insertions(db_conn, defense_df)
-
-#2nd script + naming conventions into snake_case
