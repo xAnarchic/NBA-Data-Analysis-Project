@@ -4,10 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="MySQL connection and imports">
-      <change afterPath="$PROJECT_DIR$/NBADataScript.py" afterDir="false" />
+    <list default="true" id="30a68d25-d81d-4f47-957e-6127c3ac8a33" name="Changes" comment="Main script&#10;Function tests">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/NBAData.py" beforeDir="false" afterPath="$PROJECT_DIR$/NBADataFunctions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NBADataFunctions.py" beforeDir="false" afterPath="$PROJECT_DIR$/NBADataFunctions.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NBADataScript.py" beforeDir="false" afterPath="$PROJECT_DIR$/NBADataScript.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,6 +51,8 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Python.NBAData.executor": "Run",
+    "Python.NBADataFunctions.executor": "Run",
+    "Python.NBADataScript.executor": "Run",
     "Python.Scrap code.executor": "Run",
     "Python.nba two.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
@@ -225,7 +227,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742412984175</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="Main script&#10;Function tests">
+      <option name="closed" value="true" />
+      <created>1742524535216</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1742524535216</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="VcsManagerConfiguration">
@@ -236,6 +246,7 @@
     <MESSAGE value="Further MLR" />
     <MESSAGE value="Additional variables" />
     <MESSAGE value="MySQL connection and imports" />
-    <option name="LAST_COMMIT_MESSAGE" value="MySQL connection and imports" />
+    <MESSAGE value="Main script&#10;Function tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="Main script&#10;Function tests" />
   </component>
 </project>

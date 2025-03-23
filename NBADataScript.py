@@ -1,6 +1,5 @@
 from NBADataFunctions import data_collection, correlations, multiple_linear_regression_model, databaseConnection, team_names, points, stats, defense, team_names_insertions, points_insertions, stats_insertions, defense_insertions, curr_season_data_df
 
-
 seasons = []
 
 print('How many seasons are you interested in?')
@@ -31,9 +30,9 @@ stl_list = df.get('STL').values
 blk_list = df.get('BLK').values
 to_list = df.get('TOV').values
 
-correlations(pts_list, ast_list, reb_list, stl_list, blk_list, to_list, fg3pct_list, fg3a_list, ftpct_list, fta_list, fgpct_list, fg2a_list, fg2pct_list, wins_list)
+correlations(pts_list, ast_list, reb_list, stl_list, blk_list, to_list, fg3pct_list, fg3a_list, ftpct_list, fta_list, fgpct_list, fg2a_list, fg2pct_list, efgpct_list, wins_list)
 
-multiple_linear_regression_model(fg3a_list, efgpct_list, ftpct_list, fta_list, fg2a_list, fg2pct_list, fg3pct_list, fgpct_list, ast_list, reb_list, stl_list, blk_list, wins_list)
+multiple_linear_regression_model(fg3a_list, efgpct_list, ftpct_list, fta_list, reb_list, ast_list, stl_list, blk_list, fg2a_list, wins_list)
 
 print('Username?')
 user = input()

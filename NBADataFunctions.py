@@ -1,7 +1,7 @@
 from nba_api.stats.endpoints import leaguedashteamstats, leaguedashteamptshot, teamestimatedmetrics, leaguedashptteamdefend, leaguestandingsv3
 import pandas as pd
 import numpy as np
-from scipy import stats
+from scipy import stats as statsmaths
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score, root_mean_squared_error, max_error, accuracy_score
@@ -36,15 +36,6 @@ def team_points_lists(season):
 
     return ranksdf
 
-seasons = []
-
-print('How many seasons are you interested in?')
-num_of_seasons = int(input())
-for num in range(num_of_seasons):
-    num += 1
-    print(f'Season {num}?')
-    seasons.append(input())
-
 def data_collection(seasons):
 
     n = 0
@@ -67,73 +58,53 @@ def data_collection(seasons):
 
     return merged
 
-df = data_collection(seasons)
+def correlations(pts_list, ast_list, reb_list, stl_list, blk_list, to_list, fg3a_list, fta_list, fg3pct_list, ftpct_list, fgpct_list, fg2pct_list, fg2a_list, efgpct_list, wins_list):
 
-
-teams_list = df.get('TEAM_NAME').values
-fg3a_list = df.get('FG3A').values
-efgpct_list = df.get('EFG_PCT').values
-fgpct_list = df.get('FG_PCT').values
-fg3pct_list = df.get('FG3_PCT').values
-ftpct_list = df.get('FT_PCT').values
-fta_list = df.get('FTA').values
-fg2a_list = df.get('FG2A').values
-fg2pct_list = df.get('FG2_PCT').values
-wins_list = df.get('W').values
-
-pts_list = df.get('PTS').values
-ast_list = df.get('AST').values
-reb_list = df.get('REB').values
-stl_list = df.get('STL').values
-blk_list = df.get('BLK').values
-to_list = df.get('TOV').values
-
-
-def correlations(pts_list, ast_list, reb_list, stl_list, blk_list, to_list, fg3a_list, fta_list, fg3pct_list, ftpct_list, fgpct_list, fg2pct_list, fg2a_list):
-
-    p_res = stats.spearmanr(wins_list, pts_list)
+    p_res = statsmaths.spearmanr(wins_list, pts_list)
     print(f'Points: \n Spearman correlation coefficient= {round(p_res.statistic,5)} \n p-value = {p_res.pvalue}')
 
-    a_res = stats.spearmanr(wins_list, ast_list)
+    a_res = statsmaths.spearmanr(wins_list, ast_list)
     print(f'Assists: \n Spearman correlation coefficient= {round(a_res.statistic, 5)} \n p-value = {a_res.pvalue}')
 
-    r_res = stats.spearmanr(wins_list, reb_list)
+    r_res = statsmaths.spearmanr(wins_list, reb_list)
     print(f'Rebounds: \n Spearman correlation coefficient= {round(r_res.statistic,5)} \n p-value = {r_res.pvalue}')
 
-    s_res = stats.spearmanr(wins_list, stl_list)
+    s_res = statsmaths.spearmanr(wins_list, stl_list)
     print(f'Steals: \n Spearman correlation coefficient= {round(s_res.statistic, 5)} \n p-value = {s_res.pvalue}')
 
-    b_res = stats.spearmanr(wins_list, blk_list)
+    b_res = statsmaths.spearmanr(wins_list, blk_list)
     print(f'Blocks: \n Spearman correlation coefficient= {round(b_res.statistic, 5)} \n p-value = {b_res.pvalue}')
 
-    t_res = stats.spearmanr(wins_list, to_list)
+    t_res = statsmaths.spearmanr(wins_list, to_list)
     print(f'Turnovers: \n Spearman correlation coefficient= {round(t_res.statistic, 5)} \n p-value = {t_res.pvalue}')
 
-    fg3pct_res = stats.spearmanr(wins_list, fg3pct_list)
+    fg3pct_res = statsmaths.spearmanr(wins_list, fg3pct_list)
     print(f'FG3 pct: \n Spearman correlation coefficient= {round(fg3pct_res.statistic, 5)} \n p-value = {fg3pct_res.pvalue}')
 
-    fg3a_res = stats.spearmanr(wins_list, fg3a_list)
+    fg3a_res = statsmaths.spearmanr(wins_list, fg3a_list)
     print(f'FG3A: \n Spearman correlation coefficient= {round(fg3a_res.statistic, 5)} \n p-value = {fg3a_res.pvalue}')
 
-    ftpct_res = stats.spearmanr(wins_list, ftpct_list)
+    ftpct_res = statsmaths.spearmanr(wins_list, ftpct_list)
     print(f'FT pct: \n Spearman correlation coefficient= {round(ftpct_res.statistic, 5)} \n p-value = {ftpct_res.pvalue}')
 
-    fta_res = stats.spearmanr(wins_list, fta_list)
+    fta_res = statsmaths.spearmanr(wins_list, fta_list)
     print(f'FTA: \n Spearman correlation coefficient= {round(fta_res.statistic, 5)} \n p-value = {fta_res.pvalue}')
 
-    fgpct_res = stats.spearmanr(wins_list, fgpct_list)
+    fgpct_res = statsmaths.spearmanr(wins_list, fgpct_list)
     print(f'FG pct: \n Spearman correlation coefficient= {round(fgpct_res.statistic, 5)} \n p-value = {fgpct_res.pvalue}')
 
-    fg2a_res = stats.spearmanr(wins_list, fg2a_list)
+    fg2a_res = statsmaths.spearmanr(wins_list, fg2a_list)
     print(f'FG2A: \n Spearman correlation coefficient= {round(fg2a_res.statistic, 5)} \n p-value = {fg2a_res.pvalue}')
 
-    fg2pct_res = stats.spearmanr(wins_list, fg2pct_list)
+    fg2pct_res = statsmaths.spearmanr(wins_list, fg2pct_list)
     print(f'FG2 pct: \n Spearman correlation coefficient= {round(fg2pct_res.statistic, 5)} \n p-value = {fg2pct_res.pvalue}')
 
-    return
+    efg_res = statsmaths.spearmanr(wins_list, efgpct_list)
+    print(f'EFG pct: \n Spearman correlation coefficient= {round(efg_res.statistic,5)} \n p-value = {efg_res.pvalue}')
 
+    return p_res
 
-def multiple_linear_regression_model(fg3a_list, fgpct_list, fg3pct_list, ftpct_list, fta_list, reb_list, ast_list, stl_list, blk_list, fg2a_list, fg2pct_list, wins_list):
+def multiple_linear_regression_model(fg3a_list, efgpct_list, ftpct_list, fta_list, reb_list, ast_list, stl_list, blk_list, fg2a_list, wins_list):
 
     data = pd.DataFrame([fg3a_list, efgpct_list, ftpct_list, fta_list, fg2a_list, ast_list, reb_list, stl_list, blk_list])
     data= data.transpose()
@@ -185,7 +156,6 @@ def multiple_linear_regression_model(fg3a_list, fgpct_list, fg3pct_list, ftpct_l
     print(f'Accuracy score testing data: {acc_score_test}')
 
     return
-
 
 #Gathering current season data and importing into mySQL Workbench
 
@@ -260,11 +230,6 @@ def curr_season_data_df(season):
     merged_df = points_data_df.merge(points_extra_df, how = 'inner', on = 'TEAM_NAME').merge(e_mets_df, how = 'inner', on = 'TEAM_NAME').merge(plus_minus_df, how = 'inner', on = 'TEAM_NAME').merge(d_stats_df, how = 'inner', on = 'TEAM_NAME').merge(conf_df, how = 'inner', on = 'TEAM_ID').merge(logos_df, how = 'inner', on = 'TEAM_NAME')
     return merged_df
 
-print('Username?')
-user = input()
-
-print('Password?')
-passwd = input()
 
 def databaseConnection(user, passwd):
     db_connection = None
@@ -343,12 +308,6 @@ def defense(db_connection):
 
     executionFunct(db_connection, sqlStatement)
 
-db_conn = databaseConnection(user, passwd)
-team_names(db_conn)
-points(db_conn)
-stats(db_conn)
-defense(db_conn)
-
 def team_names_insertions(db_connection, teamsDF):
 
     sqlStatement =  """INSERT INTO teams (`Team names`, `Conference`,`Logos`, `Wins`)
@@ -411,15 +370,59 @@ def defense_insertions(db_connection, defenseDF):
     except mysql.connector.Error as e:
         print(rf'The following error has occurred: {e}')
 
-merged_df = curr_season_data_df('2024-25')
-
-teams_df = merged_df.get(['TEAM_NAME', 'Conference', 'Logos', 'W'])
-points_df = merged_df.get(['TEAM_NAME', 'FG3A', 'FG3_PCT', 'FG2A', 'FG2_PCT', 'FTA', 'FT_PCT', 'FG_PCT', 'EFG_PCT'])
-stats_df = merged_df.get(['TEAM_NAME', 'AST', 'REB', 'BLK', 'STL'])
-defense_df = merged_df.get(['TEAM_NAME', 'D_FGM', 'D_FGA', 'D_FG_PCT' , 'NORMAL_FG_PCT', 'PLUS_MINUS' , 'E_DEF_RATING'])
 
 
-team_names_insertions(db_conn, teams_df)
-points_insertions(db_conn, points_df)
-stats_insertions(db_conn, stats_df)
-defense_insertions(db_conn, defense_df)
+if __name__ == 'main':
+    seasons = []
+
+    print('How many seasons are you interested in?')
+    num_of_seasons = int(input())
+    for num in range(num_of_seasons):
+        num += 1
+        print(f'Season {num}?')
+        seasons.append(input())
+
+    df = data_collection(seasons)
+
+    teams_list = df.get('TEAM_NAME').values
+    fg3a_list = df.get('FG3A').values
+    efgpct_list = df.get('EFG_PCT').values
+    fgpct_list = df.get('FG_PCT').values
+    fg3pct_list = df.get('FG3_PCT').values
+    ftpct_list = df.get('FT_PCT').values
+    fta_list = df.get('FTA').values
+    fg2a_list = df.get('FG2A').values
+    fg2pct_list = df.get('FG2_PCT').values
+    wins_list = df.get('W').values
+
+    pts_list = df.get('PTS').values
+    ast_list = df.get('AST').values
+    reb_list = df.get('REB').values
+    stl_list = df.get('STL').values
+    blk_list = df.get('BLK').values
+    to_list = df.get('TOV').values
+
+    print('Username?')
+    user = input()
+
+    print('Password?')
+    passwd = input()
+
+    db_conn = databaseConnection(user, passwd)
+    team_names(db_conn)
+    points(db_conn)
+    stats(db_conn)
+    defense(db_conn)
+
+    merged_df = curr_season_data_df('2024-25')
+
+    teams_df = merged_df.get(['TEAM_NAME', 'Conference', 'Logos', 'W'])
+    points_df = merged_df.get(['TEAM_NAME', 'FG3A', 'FG3_PCT', 'FG2A', 'FG2_PCT', 'FTA', 'FT_PCT', 'FG_PCT', 'EFG_PCT'])
+    stats_df = merged_df.get(['TEAM_NAME', 'AST', 'REB', 'BLK', 'STL'])
+    defense_df = merged_df.get(
+        ['TEAM_NAME', 'D_FGM', 'D_FGA', 'D_FG_PCT', 'NORMAL_FG_PCT', 'PLUS_MINUS', 'E_DEF_RATING'])
+
+    team_names_insertions(db_conn, teams_df)
+    points_insertions(db_conn, points_df)
+    stats_insertions(db_conn, stats_df)
+    defense_insertions(db_conn, defense_df)
