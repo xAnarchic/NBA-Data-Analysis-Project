@@ -1,7 +1,9 @@
+#Importing modules
+from Scripts.NBAData import teams_points_df
 from nba_api.stats.endpoints import leaguedashteamstats, leaguedashteamptshot, teamestimatedmetrics, leaguedashptteamdefend, leaguestandingsv3
 import pandas as pd
 import numpy as np
-from scipy import stats as statsmaths
+from scipy import stats
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score, root_mean_squared_error, max_error, accuracy_score
@@ -9,143 +11,172 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import mysql.connector
 
-#Exploring core stats (PTS, AST, REB, STL, BLK) and turnovers (TO) of teams in the 2024-25 season.
-def team_stats(season):
 
-    teams = leaguedashteamstats.LeagueDashTeamStats(season = season)
-    df = teams.get_data_frames()[0]
-    ranksdf = df.get(['TEAM_NAME', 'PTS', 'AST', 'REB', 'STL','BLK','TOV'])
-    ranksdf = ranksdf.sort_values(by = 'TEAM_NAME', ascending = True)
 
-    return ranksdf
+# Function that returns a dataframe containing data about core metrics.
+def team_core_metrics(season):
 
-def teams_points_df(season):
+    teams = leaguedashteamstats.LeagueDashTeamStats(season = season)    #Example format for "season" argument: "2024-25".
+    core_metrics_df = teams.get_data_frames()[0]
+    core_metrics_df = core_metrics_df.get(['TEAM_NAME', 'PTS', 'AST', 'REB', 'STL', 'BLK'])
+    core_metrics_df = core_metrics_df.sort_values(by ='TEAM_NAME', ascending = True)
+
+    return core_metrics_df
+
+
+# Function that returns a dataframe containing data about advanced point metrics.
+def team_points(season):
     points = leaguedashteamptshot.LeagueDashTeamPtShot(season = season)
     points_df = points.get_data_frames()[0]
     points_df = points_df.sort_values(by = 'TEAM_NAME', ascending = True)
     points_df = points_df.get(['TEAM_NAME', 'FG3A', 'EFG_PCT', 'FG_PCT', 'FG3_PCT', 'FG2A', 'FG2_PCT'])
 
-
     return points_df
 
-def team_points_lists(season):
+# Function that returns a dataframe containing data about wins over the regular season and free throw statistics.
+def team_free_throws(season):
     teams = leaguedashteamstats.LeagueDashTeamStats(season=season)
     df = teams.get_data_frames()[0]
-    ranksdf = df.get(['TEAM_NAME','W', 'FT_PCT', 'FTA'])
-    ranksdf = ranksdf.sort_values(by = 'TEAM_NAME', ascending = True)
+    free_throws_df = df.get(['TEAM_NAME','W', 'FT_PCT', 'FTA'])
+    free_throws_df = free_throws_df.sort_values(by = 'TEAM_NAME', ascending = True)
 
-    return ranksdf
+    return free_throws_df
 
+
+# Function is supplied a list of NBA seasons- "seasons". The previously defined functions are used create a merged dataframe containing a variety of metrics and statistics.
 def data_collection(seasons):
 
-    n = 0
+    n = 0   # "n" is the variable that will be used to index the supplied "seasons" list.
     while n < len(seasons):
 
+        # Creates a merged dataframe with all the desired metrics, for the first season of the list.
         if n ==0:
-            total_season_points = teams_points_df(season = seasons[n])
-            total_season_extra = team_points_lists(season = seasons[n])
-            total_season_stats = team_stats(season = seasons[n])
-            merged = total_season_points.merge(total_season_extra, how = 'inner', on = 'TEAM_NAME').merge(total_season_stats, how = 'inner', on = 'TEAM_NAME')
+            season_points = team_points(season = seasons[n])
+            season_free_throws = team_free_throws(season = seasons[n])
+            season_core_metrics = team_core_metrics(season = seasons[n])
+            merged_dataframe = season_points.merge(season_free_throws, how = 'inner', on = 'TEAM_NAME').merge(season_core_metrics, how = 'inner', on = 'TEAM_NAME')
             n += 1
 
+        # Initially merges the dataframe above with a new season's dataframe. For subsequent loops, a new season's dataframe is merged to the previous output dataframe.
         else:
             new_season_points = teams_points_df(season = seasons[n])
-            new_season_extra = team_points_lists(season = seasons[n])
-            new_season_stats = team_stats(season = seasons[n])
-            new_merged = new_season_points.merge(new_season_extra, how = 'inner', on = 'TEAM_NAME').merge(new_season_stats, how = 'inner', on = 'TEAM_NAME')
-            merged = pd.concat([merged, new_merged])
-            n += 1
+            new_season_free_throws = team_free_throws(season = seasons[n])
+            new_season_core_metrics = team_core_metrics(season = seasons[n])
+            new_merged_dataframe = new_season_points.merge(new_season_free_throws, how = 'inner', on = 'TEAM_NAME').merge(new_season_core_metrics, how = 'inner', on = 'TEAM_NAME')
+            merged_dataframe = pd.concat([merged_dataframe, new_merged_dataframe])
+            n += 1  #Increments the number that will be used to index "seasons" list that is supplied to this function, which will select a season to collect data from.
 
-    return merged
+    return merged_dataframe
 
-def correlations(pts_list, ast_list, reb_list, stl_list, blk_list, to_list, fg3a_list, fta_list, fg3pct_list, ftpct_list, fgpct_list, fg2pct_list, fg2a_list, efgpct_list, wins_list):
 
-    p_res = statsmaths.spearmanr(wins_list, pts_list)
+# This function calculates correlations between a variety of metrics and the number of wins a team achieves during the regular season.
+def correlations(pts_list, ast_list, reb_list, stl_list, blk_list, fg3a_list, fg3pct_list, fg2a_list, fg2pct_list, fta_list, ftpct_list, efgpct_list, wins_list):
+
+    p_res = stats.spearmanr(wins_list, pts_list)
     print(f'Points: \n Spearman correlation coefficient= {round(p_res.statistic,5)} \n p-value = {p_res.pvalue}')
 
-    a_res = statsmaths.spearmanr(wins_list, ast_list)
+    a_res = stats.spearmanr(wins_list, ast_list)
     print(f'Assists: \n Spearman correlation coefficient= {round(a_res.statistic, 5)} \n p-value = {a_res.pvalue}')
 
-    r_res = statsmaths.spearmanr(wins_list, reb_list)
+    r_res = stats.spearmanr(wins_list, reb_list)
     print(f'Rebounds: \n Spearman correlation coefficient= {round(r_res.statistic,5)} \n p-value = {r_res.pvalue}')
 
-    s_res = statsmaths.spearmanr(wins_list, stl_list)
+    s_res = stats.spearmanr(wins_list, stl_list)
     print(f'Steals: \n Spearman correlation coefficient= {round(s_res.statistic, 5)} \n p-value = {s_res.pvalue}')
 
-    b_res = statsmaths.spearmanr(wins_list, blk_list)
+    b_res = stats.spearmanr(wins_list, blk_list)
     print(f'Blocks: \n Spearman correlation coefficient= {round(b_res.statistic, 5)} \n p-value = {b_res.pvalue}')
 
-    t_res = statsmaths.spearmanr(wins_list, to_list)
-    print(f'Turnovers: \n Spearman correlation coefficient= {round(t_res.statistic, 5)} \n p-value = {t_res.pvalue}')
-
-    fg3pct_res = statsmaths.spearmanr(wins_list, fg3pct_list)
-    print(f'FG3 pct: \n Spearman correlation coefficient= {round(fg3pct_res.statistic, 5)} \n p-value = {fg3pct_res.pvalue}')
-
-    fg3a_res = statsmaths.spearmanr(wins_list, fg3a_list)
+    fg3a_res = stats.spearmanr(wins_list, fg3a_list)
     print(f'FG3A: \n Spearman correlation coefficient= {round(fg3a_res.statistic, 5)} \n p-value = {fg3a_res.pvalue}')
 
-    ftpct_res = statsmaths.spearmanr(wins_list, ftpct_list)
-    print(f'FT pct: \n Spearman correlation coefficient= {round(ftpct_res.statistic, 5)} \n p-value = {ftpct_res.pvalue}')
+    fg3pct_res = stats.spearmanr(wins_list, fg3pct_list)
+    print(f'FG3 pct: \n Spearman correlation coefficient= {round(fg3pct_res.statistic, 5)} \n p-value = {fg3pct_res.pvalue}')
 
-    fta_res = statsmaths.spearmanr(wins_list, fta_list)
-    print(f'FTA: \n Spearman correlation coefficient= {round(fta_res.statistic, 5)} \n p-value = {fta_res.pvalue}')
-
-    fgpct_res = statsmaths.spearmanr(wins_list, fgpct_list)
-    print(f'FG pct: \n Spearman correlation coefficient= {round(fgpct_res.statistic, 5)} \n p-value = {fgpct_res.pvalue}')
-
-    fg2a_res = statsmaths.spearmanr(wins_list, fg2a_list)
+    fg2a_res = stats.spearmanr(wins_list, fg2a_list)
     print(f'FG2A: \n Spearman correlation coefficient= {round(fg2a_res.statistic, 5)} \n p-value = {fg2a_res.pvalue}')
 
-    fg2pct_res = statsmaths.spearmanr(wins_list, fg2pct_list)
+    fg2pct_res = stats.spearmanr(wins_list, fg2pct_list)
     print(f'FG2 pct: \n Spearman correlation coefficient= {round(fg2pct_res.statistic, 5)} \n p-value = {fg2pct_res.pvalue}')
 
-    efg_res = statsmaths.spearmanr(wins_list, efgpct_list)
+    fta_res = stats.spearmanr(wins_list, fta_list)
+    print(f'FTA: \n Spearman correlation coefficient= {round(fta_res.statistic, 5)} \n p-value = {fta_res.pvalue}')
+
+    ftpct_res = stats.spearmanr(wins_list, ftpct_list)
+    print(f'FT pct: \n Spearman correlation coefficient= {round(ftpct_res.statistic, 5)} \n p-value = {ftpct_res.pvalue}')
+
+    efg_res = stats.spearmanr(wins_list, efgpct_list)
     print(f'EFG pct: \n Spearman correlation coefficient= {round(efg_res.statistic,5)} \n p-value = {efg_res.pvalue}')
 
-    return p_res
+    return None
 
-def multiple_linear_regression_model(fg3a_list, efgpct_list, ftpct_list, fta_list, reb_list, ast_list, stl_list, blk_list, fg2a_list, wins_list):
+#This function creates a multiple linear regression model.
+def multiple_linear_regression_model(fg3a_list, fg2a_list, efgpct_list, fta_list, ftpct_list, ast_list, reb_list, stl_list, blk_list, wins_list):
 
-    data = pd.DataFrame([fg3a_list, efgpct_list, ftpct_list, fta_list, fg2a_list, ast_list, reb_list, stl_list, blk_list])
-    data= data.transpose()
-    data.columns = ['EFGPCT', 'FTPCT', 'FG3A', 'FTA', 'FG2A', 'AST', 'REB', 'STL', 'BLK']
+    # Creates a dataframe of metrics to serve as independent variables for the model.
+    data_x = pd.DataFrame([fg3a_list, fg2a_list, efgpct_list, fta_list, ftpct_list, ast_list, reb_list, stl_list, blk_list])
+    data_x= data_x.transpose()
 
+    # Renames columns of the created dataframe based on the supplied metrics.
+    data_x.columns = ['FG3A', 'FG2A', 'EFGPCT', 'FTA', 'FTPCT', 'AST', 'REB', 'STL', 'BLK']
+
+    # #Creates a dataframe of actual wins earned in the regular season.
     data_y = pd.DataFrame([wins_list])
     data_y = data_y.transpose()
     data_y.columns = ['Wins']
 
-    x = data
+    # Data to be supplied to regression model.
+    x = data_x
     y = data_y
 
+    # Splits the data, where 70% forms the testing dataset and 70% forms the dataset that will train the model.
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3, random_state= 0)
+
+    # The regression model is trained using the training dataset.
     lr = LinearRegression()
     lr.fit(x_train, y_train)
-    intercept = lr.intercept_
-    gradients = lr.coef_
 
+    # Wins are rounded to whole numbers as you cannot get a fraction of a win in the NBA.
     y_pred_train = np.round(lr.predict(x_train))
+
+    # A plot of predicted wins against actual wins is created for the training dataset.
     plt.scatter(y_train, y_pred_train)
     plt.xlabel('Actual wins- training')
     plt.ylabel('Predicted wins- training')
     sns.regplot(x = y_train, y = y_pred_train, robust = True)
     plt.show()
 
+    # A residual plot is created to identify signs of overfitting or underfitting for the training dataset.
+    sns.residplot(x = y_train, y = y_pred_train)
+    plt.xlabel('Fitted values- training')
+    plt.ylabel('Residuals')
+    plt.show()
+
+    # r2, root mean squared error, and maximum error values are calculated for the training dataset.
     r2_val_train = r2_score(y_train, y_pred_train)
     print(f'r2 training data: {r2_val_train}')
     rmse_train = root_mean_squared_error(y_train, y_pred_train)
     print(f'rmse training data: {rmse_train}')
     max_err_train = max_error(y_train, y_pred_train)
     print(f'max error training data: {max_err_train}')
-    acc_score_train = accuracy_score(y_train, y_pred_train)
-    print(f'Accuracy score training data: {acc_score_train}')
 
+    # Wins are rounded to whole numbers as you cannot get a fraction of a win in the NBA.
     y_pred_test = np.round(lr.predict(x_test))
+
+    # A plot of predicted wins against actual wins is created for the testing dataset.
     plt.scatter(y_test, y_pred_test)
     plt.xlabel('Actual wins- testing')
     plt.ylabel('Predicted wins- testing')
     sns.regplot(x = y_test, y = y_pred_test, robust = True)
     plt.show()
 
+    # A residual plot is created to identify signs of overfitting or underfitting for the testing dataset.
+    sns.residplot(x=y_test, y=y_pred_test, robust = True)
+    plt.xlabel('Fitted values- testing')
+    plt.ylabel('Residuals')
+    plt.show()
+
+    # r2, root mean squared error, and maximum error values are calculated for the testing dataset.
     r2_val_test = r2_score(y_test, y_pred_test)
     print(f'r2 testing data: {r2_val_test}')
     rmse_test = root_mean_squared_error(y_test, y_pred_test)
@@ -157,41 +188,40 @@ def multiple_linear_regression_model(fg3a_list, efgpct_list, ftpct_list, fta_lis
 
     return
 
-#Gathering current season data and importing into mySQL Workbench
-
+#This function gathers data for a specified NBA season.
 def curr_season_data_df(season):
+
+    # Points metrics used for dataframe creation.
     points_data = leaguedashteamptshot.LeagueDashTeamPtShot(season = season)
     points_data_df = points_data.get_data_frames()[0]
     points_data_df = points_data_df.sort_values(by = 'TEAM_NAME', ascending = True)
-    points_data_df = points_data_df.get(['TEAM_NAME', 'FG3A', 'EFG_PCT', 'FG_PCT', 'FG3_PCT', 'FG2A', 'FG2_PCT'])
+    points_data_df = points_data_df.get(['TEAM_NAME', 'FG3A', 'FG2A', 'FG3_PCT', 'FG2_PCT', 'EFG_PCT'])
 
-
-
+    # Combination of metrics are used for dataframe creation.
     points_extra = leaguedashteamstats.LeagueDashTeamStats(season= season)
     points_extra_df = points_extra.get_data_frames()[0]
     points_extra_df = points_extra_df.sort_values(by = 'TEAM_NAME', ascending = True)
-    points_extra_df = points_extra_df.get(['TEAM_NAME', 'TEAM_ID', 'W', 'FT_PCT', 'FTA', 'AST', 'REB', 'BLK', 'STL'])
+    points_extra_df = points_extra_df.get(['TEAM_NAME', 'TEAM_ID', 'W', 'FTA', 'FT_PCT', 'AST', 'REB', 'STL', 'BLK'])
 
+    # Estimated defensive rating is used to form a dataframe.
     estimated_mets = teamestimatedmetrics.TeamEstimatedMetrics(season = season)
     e_mets_df = estimated_mets.get_data_frames()[0]
     e_mets_df = e_mets_df.sort_values(by = 'TEAM_NAME', ascending = True)
-    e_mets_df = e_mets_df.get(['TEAM_NAME', 'E_OFF_RATING', 'E_DEF_RATING'])
+    e_mets_df = e_mets_df.get(['TEAM_NAME', 'E_DEF_RATING'])
 
-    plus_minus = leaguedashteamstats.LeagueDashTeamStats(season = season)
-    plus_minus_df = plus_minus.get_data_frames()[0]
-    plus_minus_df = plus_minus_df.sort_values(by = 'TEAM_NAME', ascending = True)
-    plus_minus_df = plus_minus_df.get(['TEAM_NAME', 'PLUS_MINUS'])
-
+    # Additional defensive metrics are used to form a dataframe.
     defensive_stats = leaguedashptteamdefend.LeagueDashPtTeamDefend(season = season)
-    d_stats_df = defensive_stats.get_data_frames()[0]
-    d_stats_df = d_stats_df.sort_values(by = 'TEAM_NAME', ascending = True)
-    d_stats_df = d_stats_df.get(['TEAM_NAME', 'D_FGM', 'D_FGA', 'D_FG_PCT', 'NORMAL_FG_PCT'])
+    def_stats_df = defensive_stats.get_data_frames()[0]
+    def_stats_df = def_stats_df.sort_values(by = 'TEAM_NAME', ascending = True)
+    def_stats_df = def_stats_df.get(['TEAM_NAME', 'D_FGM', 'D_FGA', 'D_FG_PCT'])
 
+    # Conference data of teams is used to form a dataframe.
     conference = leaguestandingsv3.LeagueStandingsV3(season = season)
     conf_df = conference.get_data_frames()[0]
-    conf_df = conf_df.get(['TeamID', 'Conference', 'TotalPoints', 'OppTotalPoints', 'DiffTotalPoints'])
+    conf_df = conf_df.get(['TeamID', 'Conference'])
     conf_df = conf_df.rename(columns = {'TeamID' : 'TEAM_ID'})
 
+    # Logos are used to form a dataframe.
     logos_df = pd.DataFrame({
         'TEAM_NAME': ['Atlanta Hawks', 'Boston Celtics', 'Brooklyn Nets', 'Charlotte Hornets', 'Chicago Bulls', 'Cleveland Cavaliers', 'Dallas Mavericks','Denver Nuggets', 'Detroit Pistons', 'Golden State Warriors', 'Houston Rockets', 'Indiana Pacers', 'LA Clippers', 'Los Angeles Lakers','Memphis Grizzlies', 'Miami Heat', 'Milwaukee Bucks', 'Minnesota Timberwolves', 'New Orleans Pelicans', 'New York Knicks', 'Oklahoma City Thunder','Orlando Magic', 'Philadelphia 76ers', 'Phoenix Suns', 'Portland Trail Blazers', 'Sacramento Kings', 'San Antonio Spurs', 'Toronto Raptors', 'Utah Jazz', 'Washington Wizards'],
                              'Logos': [
@@ -227,11 +257,13 @@ def curr_season_data_df(season):
                                 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3Nzc3N//AABEIAMAAzAMBIgACEQEDEQH/xAAcAAACAgMBAQAAAAAAAAAAAAAAAQYHAgMFCAT/xABHEAABAgMGAgcFBQUGBQUAAAABAgMABBEFBhIhMUFRYQcTIjJCUnEjM2KBkUNTobHBFBU0ctFjgpKi4fAko7LC0gglc5Px/8QAGgEBAAMBAQEAAAAAAAAAAAAAAAIDBAUBBv/EACwRAAICAQMDAwMDBQAAAAAAAAABAgMRBBIxBSEyQVFhEyLRBhQjM0Jx4fD/2gAMAwEAAhEDEQA/ALlp3gFdnUubiGAcQ0FN/vIQwlIUlJDW6NzAciMXar7v4IAOK8NVHVs7c4KCmHESN3OHKDtYqA0c8S9lCCow4gmjY7ydzADzIpSlDl/aQqqSe7UnVvyweXFnXufBBQ1ISaODvLOhgANBVOI0OjvDlDHeBIoU6AeOAEYcQT7PdG5MGYIxZlXcPlgBCpVXDVR1QfBAUlIAxVBPveHKChKiE5OeJdNYwW6ygVUoBrds61gDMnFmRRSe6nzwA69nEo/Z+WNAmisHqWnXj4SE0CfmYYM6c0sIQrdSnKmB5k3fCF5fefpDzBzokjRPnjT1c7TuywT5aqI9dIeGeA7SGFkd0hRyj3AybdCCU4idU+SERlgUs0+939I0lcymmOVVXxKQoHEIBNsYsKjhT5FimfrHh6biVUFRSmifPDKVAE611SfB6QtcOYKj3FDRMMAk0Bood8+aAFlhKSTh+839IK1zIpTwDxwVATip7Lybw+1UAkYz3FeWAEk0GJIxFWqfJBQ+bs69bv6Q8yohOSh3z5vSF2cOLCer8m9eMACq60oQckeeDX4q6jyQGuIJJqsiqFeUQ888PZI7580AABIKArIaOcYMOLfqqZU484xJTgBKT1WyNwYyNBTrgVnYjYQAziKgSAHthGI8WAZn3h4ekHFOMkfecIepAJIw6fHACOHAAr3XhPOH2sVVULx7o2pCr4sOIn7M7c4KUyxVB+0J05QADLFhzB94OEBw0AVk14DxMPXlh0/tIWQ7VK1yLeyOcABrjGz40GxEanphtlQQmqlrOaE5msILcfJbljkDm+dvSNyUS0gyt1xaUpAxOOrP4kwCy+DUGH30hLiuobrklJqr6x9DUsw1mEVV5lZmIJb/AEkMNKUzYbX7QsZdevJsHlxivbYti0bZXW0Zx18YsQRiwoSf5Rllx15xVK2KOzpeiai5bp/avk9AuOYGlLCVLwiuFOp5CITPdJlnSzrjSLPnC4hRSpLqQ2UnmDnEOu5fS0rGcSiYddnJOoBbdVVSBxSo5/In6RK77WLKW/Yot6zAFvIbx4kDN1sag8xnHn1HJZiSj0+GlvUNUsxfDTPlV0por2bJV83h/SM2elNgkdbZTyRvhdBpHNuHdBm1pF+ftJJ6l1BblqZZ+cfPSORZ91ZqYvSbEfGDqiVPODdqtQoeunrEd1mEbnpelb5wx4c9y0rt3olLxYzJy00hLfeW63RFeANczHbWG1jCtIUOYiFXrvLL3TkmrLsZpsTKUdhFOw0niRueUVhPWhP2hNCanpx515JqhRWRgPwgd35UicrVHszDp+kS1ebIfbD0z3ZfKpBIBMstTVdhmk/KNanVsgCdThQg9hxGnz4RVVh39tiz1huaX+3Swyo73x/e3+f1iybv3osu3klEs6EPgdphzJQ+W49IlGakZNX0zUabvJZXujppKlKStJBcIrloRC7OEhBo3X2h4Rg9JqbBck8jqWzofThDZeS8CUgpUjJTR3POJnPMzh7IJoj7Om8PtYtPb/hSAb5VJ8PkhUHdxGn3u/pWAAYQDTNs987gwaUxmoHu+cM8cNKeDz84KUz71dQfBABVQXUD2o1TyhoqB7AVTvXjCAywlZoPtOPKFrqer5cecAIYcJUEkNbo4xlkCkqzB938MBKsQxUL1MkjhC82E1+9HD/ecAMBRUQkgODVZ0MKqSklI9kDmjcmBQTgAUfYjunesMlWKpHtk6DiIARyArnX3fwesaEhU24pCDRsZOOD7TkOUNft3jLtEgavHhyjVbtryl37NMzMkBCey22NVq2A5wJQhKctsVlity2pC71nl+aISNGmUd5w8AP98TFO3jvRaNvvVmFdTLV7Eug9kep3POPnty1py3LRL81VbrhwNMoBOHglI3MSi7nRzNTYRMW2syrJ0l0Htn+Y7fKM7lKbwj6rTaXS9OrVmoa3/wDcfkhCG1urDTKFuLJySkVJ+kSOy7iXgnkBX7KiWQfHMqwn/CATEgnL83NuilUtYcuidfRkpUrQprzcOvyrEfV02Wj1xKLGlOqroXlVp+UXQ0cmssxan9SybxUkv89yRSfRY0M7Rthwnyy7SUfirFX6RMLDsyz7AkTJsTaltFRVR5YJqdY4N378XfvaESynf2K0VZJl3lAFR+E6K9NeUdaakHZYFSgkt1oFD+kSVex8HKv6hqNSv5J5Nk66yy2xKyKUIl2UjAlvICmg9BH3MzEkpwTJUyiYUgJUvLFThX1JjiUhpSpaglAJUdAN4k4mPc8nyWxcKy7YnXp0WlNIeeNV4VJUkn0IyHziOT/RjajIxSU/LzQGiVoLR/NQP4ROHWpOy5VU9bE01LMN95TiglI5V39BEFt3pjl5Z3qbvyAmGkmnXTKigK/lTr9Yj+338I6NXWNVp0kp9l6EZtSwrVsqon5B5oealUH+8KiPgZdWytLrKlJcQapUlVFJ5iJfZnTO28vqrbsajasiqXXiAH8qtY7n7jupfWWXN3emkMzCRVYZyKSdMbZ09eWRiqzSzh3Oxpf1FXZ9l659vwK5l/y843Z9vKCXDk1NnJKjsF8Dz0PKJ3MywdKXmFBDyc0rA15GKNt+78/d9won2KsryQ+ipQrlXY8vziX9H18VJW1ZNrO9lRCJd5Z32ST+UeQm84kVdQ6bXOH7jS8eq/H4J+w6XQoAYHk+9SqNlUYcdD1Pk3rCnZdSil9j3qNR5hwhNO9cA63m6R3eUXHzhnQ4gCarPdV5RwgHaxBNAR7z4oQw4VAH2X2hOxgyOEKFAPd84HoVThxKB6s+CmYMCqJNHgVnYjhD7WPIe2OvACGitPYdpO5PGAMQAAEYsQ+94Qa590DT+0gBACiE+y3TvDqcSSRXF3Ph9YAVaHEU1rl1fl5xrmXiwycIK1HJChri2EbBWpSD7Yd5R0MamgH5uqAeqZGVfMd4A2soRIyilurAoCt1xX4mKhtmdnr73jDNnIUplsFLCD3UI3Wrmf6DjE3v5Mzc4Ja7tlfxU9m6rZtoak+sfPNzVjdGl3AVAPTb3dQMnJlyn4J/ARBxdj2o6mltr0dX1n3m+F7L3HJ2Zd/o+s3942o8gzRGHrlCqlHytp/pFU336Q7UvSVyrRVJWWcv2dtXadHxka/y6escK8l4LQvFaKpy1HescOSEJPYaT5Uj9d45dAM46VOmjBdziarWWXzcpPLYicqAUHCGDhzGRI1gpU12gJBPZEajENtovLSyBiLigkCmpJj1C+0qRsiRkVuKcW02lK1qVUkgUrU84o/oou+q2r2y7q0kylnkTL6juoHsJ+ahX0SeIj0E9KIcmOufIUlIyScgOZjDqpZlhGymL25OTLSD8yguAYEbYt41UXLTA6xJSpKgRWIzezpalLKn0yNhyyLRW0sCZdK8LaQNUpO6vwHPOksu9b9kXxs79okXKqTk4yvJxlXBQ/XQxQ4ySy0Wpp9kV10+SRLlkWiStTKkrZwE1SFag00BIr9IqVRCjma/lHpPpBu45btzJiRaAXOS4D8v8S0V7P8AeBUnlWu0ebAMqqBHrGzSyWzBmvTTyFaCicgY+iz5+as6bROSEw7LzLZ7LraqEcuYy0OsfOBUwGhyTrGl9+zKE2uC7LldJkjbzf7ovU2y1MOAIDpA6l+uxB7p5aRqvlcRyRSudsgKdldVsaqb5jiPyimKZUPCkWh0b9JLkgpqybxu9ZIqIQzOLNSzwC+Kee2+WYwajSprMTrdP6nbpp5T/wBk+6Obym2bNErNuBU5LJAKjq6jZXrx5xIXU/s01krA0+rUeBX+sQ28VhLu/ard57Cbq0leKblm8wpJ7yk05Zkcc+NZuFM2jZ6XGlBTTyApChnqKgxjjnhmrWxrlJW0+MvT2fsMkk4gKYR3PPzhmo0GKu3kjVLOKcQkryeoUg+U8I2DU4TQjv18XpEjEG2EryH2vGGKKFSeq5cecIEBBVhq14Uc4FKwn2oxqO425QAyVY6qHtfCNoEkAqwitfecjBSgw4ia6OV0gGZ3SR/n9eMAYOKShlSlmjKRVJ3MZyLZRKhS6ha+2rlWPnnAFtJb0Lq0pweXf9I6BpQUEDw4M47J3dlbSt+1FJxkVUrfCMkNp/3qTHnW894J28dsO2lPKIUrJpsaNIrkkf13MTTpsvGbQtpNhyzh/ZpGi36HJTpGQ+QP1PKK0IGifnG/TVbVuZm1Frk8DSc4RNVRlkMqZwgmmcajKBVG2VZemXmpaUZU7MOrCG0IFSpR0EYNtqecCG0KUpRASlIqSdgBF3XAubKXPs9V4ryKabmw2SMZ7Msn/wAj/oIrstVa+S2ENzySO5dgytybr4Zt5ptwAvzsws4U4qZ1PADIRWPSF0lTFu9ZZ9hrcl7NOS3e64+PzCfzjl9Id+pm9kwZdoLZsppVW2TkXCNFr58Bt6xDqhIKl5AZmKq6f758lllvbbEFFKU4R2QMgKR9ljWrO2JaDc/Zj6mZhGVU6KHAjcRcly+j6z7Nu45PWsy1Mzs9LgqCkgpaQoA4U8+JisL73dF27VSy0vHKzCStgk9pIBoUq9K6xONsZvaQlCUVuLquBf6SvWyJd2ktaiE1cl1HvgaqRxHLaK46X7omx7V/fEkikjOL7aQMmnTmfkrX1rFfsPOyr7cww4pt9pQW24g0UhQ0IMXjci+cnfWzXLAvG02ZxxopUkiiZlPmTwVvT5iKpVumW6PBYpKyOGUUTlQf/sCSAK7xKb93Lm7p2hTN2znj/wAPMEafCr4vziLmmg+saYyUllGeUXF4YsVdYSjXLaHTCMxAE0zMSIlwdD19OuSi7NrOYjhpJOOHvCmbZ9NvpFo2VIizmFSrZH7OlZLKfIk54fka05Ujyiy660+29LqLbragtC06oUNDHp65NvIvLdyUtIUDqk4H0g9xxOSh9c/QiOfqKtr3I3U2tx2n3kBqddbOTbqes+mR/SN3DEaAe75xhPgJclnSAcLmEjiDlGQG5GInbyRmLRgkKKsPtt07UhJyHsRiG/rBQCiSo/8Ayg5n5xkKK3LfIGlecD0xqkIqAQ3ujcwGnZx7+6pt6/hDJViqoe2HdTtAKVNACD7yvhgDQsFU9LIVmoYitXHLKM7dtFuyLHnLReFUSrKnSmveoKgfPT5xi3/HsgGqA2rDX1EQ/pstD9luYZcEBU2+hsg7pHaP5CJQW6SRFvCyUFMzLs2+7MzC8bzyy66rzLUaqP1JjDQQUxaUFNoRzIAGkdfGOxzn37gDAo8q1yAh1SNRnFs9D9xutLV47WZqhOckysa/2h/T6xCyxQWWTrg5M6fRzcpm7sibyXmCWppLZcQ27pLJpqr4z+GmZiBdIN+Ji9k+W2Stqy2VewZJpj+NfE8Bt9Sep0r32/f08uyLMc/9sll0cdScphY1pxSDpx10pFeHM5RVVW298ydk0vsiIRrmD7Bz+Q/lG09nSN0nLiZm5aXUKh99DZHEKUB+sXyfZsqjyj1XNNhiyA1922lP0oIpTplRhmLGc4omE/QtH9Yu+085FzmBFOdMaK2ZZixtMqT9UE/9sc+jzNtviyraiucZNOusuoeZcW242cSFoJCkkaEEaRichSACOi/ZmFPHBelxr1SV+7GesG8aG1zwbwrqKCYT508FDcDfMZGKuvvdObuhan7O9idlHiTKzOHJY4H4huPnHCkZqYkpxmbk3VMvsrC0OJ8Ji/rDtGyuk66DsrOtoEwiiJlsHtMueFxPI0qD6jYxkknTLK8WaYtWrD5PPdczUQE5x1Ly2FN3btZ6zZ9PbQaocA7LqdlD/escsAHPQbRqTTWUZmmnhgVZRZ/QRbJl7YnrGdV7Obb69tPBxGRp6pI/wCKwpXNMdu5do/uq9lkzWIoCJhKVnilWRH4xC6O6DRZXLEkemrU/gnFDIpoQfQwJIzwiitXOYjO0MpJ/KvYP5RqbNW2ys0FBg+LKOUbvUZwYEqPuTonhDJA9/wBpWxTwhgqKiSkF6maK5AQN1AoyMaa5k7GB6FKVSVV+PhBnvkE/8yEMOHsg9V4knWA5YSc6+7+H1gDUMrRl1aY0KGHhvFf9PjKlXfs57wtTRr80xP3jhmZZZHtA5hUdsxSIx0yyf7XcSacFf+GcbeOW1aH/AKosqeJohPxZ54UQTQQgaVIgIxEkZCsbZWXenZtiUlW8b7zgQ2muqjHUbwc/GWSnozuku9Vt4plJFmShCpknRw7Nj11PAeoi0Olq86bv3fFmSCg3OTqC0jBl1TWiiOGWQiR3WsSUundtqSC0gMoLkw8csSqVUo/70EeeL3265eW8M1ajhIaUrBLoV4WgezlsTr84xx/msz6I1vFUMHFJFKJGW0AOEcz+EA7RJApBqaCNpjEMtY6d2Wy/eixmxnitCXy5BxNY5tMPOJD0dMh6/VhoIyM1i/wpUr9IhPtFk4eSPSlqfwLtIqbpcaxXal3AO03OoV6ApWn9Ytm0/wCBd9IrHpTRiudMq3Q8yR/9gH6xzqXiaNtnBS4zOcMknLhAQB6wAZVjqHPAq2ESC4t413Wt9mfBJYWermUVyU2dT6jUekR6lTlDNMqa1iMo7o4JRlh5PR3SBdeXvld9Lsn1ZnWkdbJu1oFA54CeB/A0MecnErS6tp1CkOIUULQrVKgaEHnF4dCV4zPWQ5YU0sGYkRiYqe80f/E5fMcYj3TVdYSM8m8MmjCxMkImUpGjmyvmMvlGWmWyX02abYqcdyKvJ0AyHGPtsNrr7as9oZqXMtgf4hHxHNWUSfo2kzPX5slpKcm3utV6IBVGqbxFszQWZI9IWiaST/8AIRGKBRCQMzQCnkyhWrnLBsauOJQPmYy1KinJQ7580cg6PqFCapCqHZzjBQqzB6vlx5wjhwDI9SdE71gVQH2wxHanCB6MlRKSoAO7JhebDnX3nwwAagKqfvOEMUKqCoI/5kAaJwVlSRTAmikK4kRlasm3bNizUk4aIm5dTZPDEKV+X6Rt2JpWuXV8Iws9WFLkuVVLSqA8U7QPDya4l1lamXkFt1tRQ4g6pWDRQ+REWX0G2EJ22pm13k4mpFIQ3ll1qv6J/wCoRz+mK75sq9i59pFJa0h1ooMkujJY+eSvUmLP6IbNTZ1xZFYADk4VTSyN8Z7P+QIHyjfbZmlP3M0K/wCR/B8fTTbZsy6f7C0qj1pL6k559WM1/UUT/eigK1PKLD6cbRMzexuSxEolJcJptiVmT66fSK9pQVMT08dsCu+WZCUdhpBUAZawAVNdIDmaDOLykST5ol/RO0X+kGyz9z1jn/LUP+6IkaJid9CbWK/iFHwyTqh9UD9Yrt8GWVeaL5tT+Bd9BFedILYdudaQPhbCx6pIP6RYdp/wLvoIg18Gi9dS10DUyjlPWkc6vlGyfDKDBGVYVSTDyA5wwNFR1TniJAyECTQV3gpiUYW9BAHcuVbJsC9Fn2njIaQ71b48za8lfSuL1SI9I3islm37EnLNfoUTDRSD5VbH5GkeU1ABNDnXhHp7o/tE2tc6yppZqssBC6Guaez9coxapYakjXp3lYZ5kfaXLPuyzqSh1lxTbiTqlSTQj6gxZ/QHZZete0rWcT2JZpLDZOmNeZpzASP8UR/pdswWffye6oHDOIRNJQkbqqk/MqQT84ubo6sEXcunKSbiQmZWOvmD/aKz/AAJ9EiJ3WZqXyeV14m/g7U4QucZbPcQCtdNthGelMRoB7v4o0y/tXHpkioUaBPmSNI3nLNQBB/yRgNQVUFAhNXd07Q0EgHqRjFcyeMKmRTjIpq5AKKGRLfLjzgDHLASkexGqd4emALGvuqbev4Q6qJCikB0aI4ws+1Q1qfaV8Pp+MAMYsRCadcO8dqR87pDDiJpsANp7Dg5cY3mlKHJod1Q1JhLBXiCkVXSmDYiAOJ0gXaTei7j8oigmke1ll8HAMh6HT5x0LpMfs11rIlygoLUm0gpUKEUSBH0SDhbUZR1VVI7iuI4R91KR65PGDxLvk8x9Irxdv3bZcOLBMYE+gAiN4iTEn6TJZUpfq1wse9eDoHIpFPyiM4aZmOrX4IwW+bAnKlIQOEaZ8YYGI1GkB5RMrElQ3ziyugZrrL0Tz1M2pSg5Ylf6RW1AnURa/8A6fmj+8radI7JZZSDzxL/ANIpveK2XUL7y3rT/gXfSInarfXWXNtjxMrH4RLLU/gXfSI08KsODigj8I58DXM82tEKQlRFaisNSqngOEZFAZxNHVCin6ZQgncx1jnvkCrKggFANINdoFU0GsDwST2qnbaL+6DnSu5ZR5JpynzMUHSnM8OUegOhKWWxchtxYI66YcWn+WtBGbVeCNGn8j6LwXVFudIFmWg+gGTkZbG5XxuYqoT8szEqtB0paS0jvu5ZDMDcx9LiktoUtw0QMyeEfGzjccMwc3VDsNnwpjC5N9jVjBsSjBgQO+B7MjQDnGQzJwUr9pXeEKYSAatnvq3BgJCqVFKdyniiJIAUFGIglnZNM6wKpX24xHYjhD7eIEUDx1TsIEYgKM9pNcyeMABHdSVVI+08sIpKtBTDr8cLs4DhB6kd4bw86pqK/d0Og5wAVAAURUfd+XnD07JVU64+HKEMWIhJHXDvnakAwYTh91XtDcmANb7PWIGHsOI7qvMY3SkyX0lLgwOpyUg/nGJr2a5191y9Y1uslxYUhWCZR4tjA8Ky6a7qTM26zb8gwXepaKJpCBVVBoqm9K5xTVa0oQa55cI9bS00l+rTowvDvI2Ppxiur99FUtabjloXcLcpOqqpyXVk08TuPKr8D+Ma6b9v2yM9tWe6KPUdhpADTOPrtOyp6ypxcpaUo7KvJJ7DqdfQ6EcxHyKAPdjcsPujK01yAzOcXN/6f0VkrZepn16Ef5Qf1imaBPOLy6BGOru3Pu097N1+iQP0jPqf6Zdp/MsO1P4F30ER4CuQ3yiRWn/BO+kR0aikYYmqR5ztFOG050Ed2YcFP75j5iamOpedoM3jtJulCJhX45xzAncx1Y8IwS5DFQZQJIAPGFuNPnExuj0dWveRaH1oVZ9n1zmXk5rG+BO/rp+UeSkoLMhGDlwR2wrGnrftFEhZrJdeWcz4UJ8yjsB+keorCs1qxLGk7Oa93LNBGLYkan61j5Lt3csm61mmXs9lLSdXXlmq3DxUf9gbR9Dji55YQmrcudDu4f6RzrrvqP4NtdaggWszrgoCZdJ0854+kfTQglAOdPecuEYoQE5N5FOS+BHAQdnDoepr3a51iksHXxUwgeDzQ60z72LQeSA1xDEfa+A7CADNXVnP7Su8D0WEnshXa3d4wwCrT2dMqDKvOMez1dQCWRonesNWVOuSVGmRBplAASorqU+12QNDAk0JAqSrv/BDGIdnFUq+04QAmpp2SnvfHACNMISTRuvZXuTD7WIHCA5sjiIVQBXDVJ+z8vOHTOmKpP2nDlACBACqZ1Pb+GDslICiQgHsr8xh11oKU1+OETkFFOJJ0RTuwBhMMh/vijye6E6jnGKJl2XyfBdQPtECpHqI3KGgxEq1DmwgyNTpTUeeAPntSy7Mt6TLFoSrE2wrIBQBp6HaK1t3oYYWpT137QLNc+omgVJ9ArUfOsWUqWRj61mrS1fd5U9RwjMPzTRopCHx5knCf6RONkocMjKEZcnnW0+j69VkqUZiyHphtP2kn7YH5J7X+URbnQvLPS1zEpmmHGHlTTpLbiChQFcsjnExFoND3oW1/OnL6xuRNS6xk8j6xOd0pxwyMa4xeUa7T/gXfSI6DTOJFO0elVoaUkqVkO1HyysjLMgF9xC18CRQRWngk+5QN6bvWxaF8bS/d1kzsyhb1UrbYVg0Hi7v4x1LG6IrxT5C7Rcl7NZOqVq61z6JyH1MXquelWzQuCo2GcazPKX/AA7ClDZS+yIuepnjCK/oxzkjF2ejS79hFLpZVOzSftpmiqHkNBEpem22lBtsdY5oG0bf0jSUPvAl93CkfZoyxfPWM2mm2m8LbYwr8NO76xTKTk8stSS4MOqdeWlUxRS05hgHIevGNwpQpSao8StMMMDwVz+9H5QsiCcNEjIp80RPQFMKcRogdw7qh1Virh9ppg2pxhZCnZxA6DyQ+1TDiz+9/SAFkEqANUE9pR1SYDtiyA7nxQE1BVhoBqjzQGiaHvV0HkgBgqCioCro1RtCSSPdDGDmSeMPtd1Ku1r1vHlDSajskN8Qd+cAYdjB2PceJO9YZywlWdfdAbev4QyVVqUgODRHGADM0oa9/wCCADtYuzQPeL0hDCUKIBDO43MGRSAVENjRY3h1VWpFFjRA0MALyhW/ujwG1YYxYiE06wDtnYwcaZ17/wAEI6BKjRHhXuowAGnV5D2PiA1rAquVaYvs4ZJxVp7QaN7GEN6GoPfPk9IAYriVSgc8dd/SEMGA0yZ3B1r/ALpBkQE17HhX5oZxA4sI6zQN8RxgBEE0CwMX2ca1MNrUR1aFLHfxJqI2ZUOEkpPfVuiA0oAVUR4VDxesBg0/s0rTH1XshlSmdYYlWUnNpAWruHDXLnG6qiquEdZT3e1OMKlAQDVJ7yvJAYElATUMpSHE97LL5Q+wUAn3HA61gNMIxKKUjuqHih9rFiwjrKe729YAWZUArJf2Z2hp7xwZOeM8YQoAQk1Se8ryw6AAA5BPdV5oARw4R9xXPjWGcWIVzc8FNvWCpxYqe0+75cYWgICiUHNS90wA6HErDTH9oeMY9nq6/Y17u9YdagYjQDuq88PtYsWEdZT3e3rABQ4hioHadg8BCTUlVMqe8rv6QZUIBqg95Xlg1piNAO58frAAcAQmo9hsOECsIPt+0rYp4Q6qKq4R1m7ewECapFGx1g3J25QB/9k='
        ]})
 
-    merged_df = points_data_df.merge(points_extra_df, how = 'inner', on = 'TEAM_NAME').merge(e_mets_df, how = 'inner', on = 'TEAM_NAME').merge(plus_minus_df, how = 'inner', on = 'TEAM_NAME').merge(d_stats_df, how = 'inner', on = 'TEAM_NAME').merge(conf_df, how = 'inner', on = 'TEAM_ID').merge(logos_df, how = 'inner', on = 'TEAM_NAME')
-    return merged_df
+    # All the dataframes created above are merged together to form a large dataframe containing data for a specified season.
+    final_merged_dataframe = points_data_df.merge(points_extra_df, how = 'inner', on = 'TEAM_NAME').merge(e_mets_df, how = 'inner', on = 'TEAM_NAME').merge(def_stats_df, how = 'inner', on = 'TEAM_NAME').merge(conf_df, how = 'inner', on = 'TEAM_ID').merge(logos_df, how = 'inner', on = 'TEAM_NAME')
+    return final_merged_dataframe
 
 
-def databaseConnection(user, passwd):
+#This function creates a connection to a specified mySQL Workbench database.
+def database_connection(user, passwd):
     db_connection = None
 
     try:
@@ -247,7 +279,9 @@ def databaseConnection(user, passwd):
 
     return db_connection
 
-def executionFunct(db_connection, sql_statement):
+
+#This function is passed a connection and the sql statement to be executed.
+def execution_function(db_connection, sql_statement):
 
     try:
         cursor_obj = db_connection.cursor()
@@ -258,19 +292,22 @@ def executionFunct(db_connection, sql_statement):
     except mysql.connector.Error as e:
         print(rf'The following error has occurred: {e}')
 
+
+#The following functions are used to create tables in mySQL Workbench.
 def team_names(db_connection):
 
-    sqlStatement = """CREATE TABLE IF NOT EXISTS teams (
+    sql_statement = """CREATE TABLE IF NOT EXISTS teams (
                             `Team names` VARCHAR(255),
                             `Conference` VARCHAR(255),
                             `Logos` TEXT(20000),
                             `Wins` INTEGER);"""
 
-    executionFunct(db_connection, sqlStatement)
+    execution_function(db_connection, sql_statement)
+
 
 def points(db_connection):
 
-    sqlStatement = """CREATE TABLE IF NOT EXISTS points (
+    sql_statement = """CREATE TABLE IF NOT EXISTS points (
                             `Team names` VARCHAR(255),
                             `FG3A` INTEGER,
                             `FG3_PCT` FLOAT,
@@ -278,45 +315,45 @@ def points(db_connection):
                             `FG2_PCT` FLOAT,
                             `FTA` INTEGER,
                             `FT_PCT` FLOAT,
-                            `FG_PCT` FLOAT,
                             `EFG_PCT` FLOAT);"""
 
-    executionFunct(db_connection, sqlStatement)
+    execution_function(db_connection, sql_statement)
 
 
-def stats(db_connection):
+def core_metrics(db_connection):
 
-    sqlStatement = """CREATE TABLE IF NOT EXISTS stats (
+    sql_statement = """CREATE TABLE IF NOT EXISTS core_metrics (
                             `Team names` VARCHAR(255),
                             `AST` INTEGER,
                             `REB` INTEGER,
                             `BLK` INTEGER,
                             `STL` INTEGER);"""
 
-    executionFunct(db_connection, sqlStatement)
+    execution_function(db_connection, sql_statement)
+
 
 def defense(db_connection):
 
-    sqlStatement = """CREATE TABLE IF NOT EXISTS defense (
+    sql_statement = """CREATE TABLE IF NOT EXISTS defense (
                             `Team names` VARCHAR(255),
                             `D_FGM` INTEGER,
                             `D_FGA` INTEGER,
                             `D_FG_PCT` FLOAT,
-                            `NORMAL_FG_PCT` FLOAT,
-                            `PLUS_MINUS` INTEGER,
                             `E_DEF_RATING` FLOAT);"""
 
-    executionFunct(db_connection, sqlStatement)
+    execution_function(db_connection, sql_statement)
 
-def team_names_insertions(db_connection, teamsDF):
 
-    sqlStatement =  """INSERT INTO teams (`Team names`, `Conference`,`Logos`, `Wins`)
+#The following functions insert data, from supplied dataframes, into the mySQL Workbench tables.
+def team_names_insertions(db_connection, teams_df):
+
+    sql_statement =  """INSERT INTO teams (`Team names`, `Conference`,`Logos`, `Wins`)
                         VALUES (%s, %s, %s, %s);"""
 
-    teamsDataTuple = [tuple(team) for team in teamsDF.to_numpy()]
+    teams_data_tuple = [tuple(team) for team in teams_df.to_numpy()]
     try:
-        cursorObj = db_connection.cursor()
-        cursorObj.executemany(sqlStatement, teamsDataTuple)
+        cursor_obj = db_connection.cursor()
+        cursor_obj.executemany(sql_statement, teams_data_tuple)
         db_connection.commit()
         print('Data insertion successful')
 
@@ -324,12 +361,12 @@ def team_names_insertions(db_connection, teamsDF):
         print(rf'The following error has occurred: {e}')
 
 
-def points_insertions(db_connection, pointsDF):
+def points_insertions(db_connection, points_df):
 
-    sql_statement =  """INSERT INTO points (`Team names`, `FG3A`, `FG3_PCT`, `FG2A`, `FG2_PCT`, `FTA`, `FT_PCT`, `FG_PCT`, `EFG_PCT`)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+    sql_statement =  """INSERT INTO points (`Team names`, `FG3A`, `FG3_PCT`, `FG2A`, `FG2_PCT`, `FTA`, `FT_PCT`, `EFG_PCT`)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);"""
 
-    points_data_typle = [tuple(points) for points in pointsDF.to_numpy()]
+    points_data_typle = [tuple(points) for points in points_df.to_numpy()]
     try:
         cursor_obj = db_connection.cursor()
         cursor_obj.executemany(sql_statement, points_data_typle)
@@ -339,15 +376,15 @@ def points_insertions(db_connection, pointsDF):
     except mysql.connector.Error as e:
         print(rf'The following error has occurred: {e}')
 
-def stats_insertions(db_connection, statsDF):
+def core_metrics_insertion(db_connection, core_metrics_df):
 
-    sql_statement =  """INSERT INTO stats (`Team names`, `AST`, `REB`, `BLK`, `STL`)
+    sql_statement =  """INSERT INTO core_metrics (`Team names`, `AST`, `REB`, `BLK`, `STL`)
                         VALUES (%s, %s, %s, %s, %s);"""
 
-    stats_data_tuple = [tuple(stat) for stat in statsDF.to_numpy()]
+    core_metrics_data_tuple = [tuple(stat) for stat in core_metrics_df.to_numpy()]
     try:
         cursor_obj = db_connection.cursor()
-        cursor_obj.executemany(sql_statement, stats_data_tuple)
+        cursor_obj.executemany(sql_statement, core_metrics_data_tuple)
         db_connection.commit()
         print('Data insertion successful')
 
@@ -355,12 +392,12 @@ def stats_insertions(db_connection, statsDF):
         print(rf'The following error has occurred: {e}')
 
 
-def defense_insertions(db_connection, defenseDF):
+def defense_insertions(db_connection, defense_df):
 
-    sql_statement =  """INSERT INTO defense (`Team names`, `D_FGM`, `D_FGA`, `D_FG_PCT`, `NORMAL_FG_PCT`, `PLUS_MINUS`, `E_DEF_RATING`)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s);"""
+    sql_statement =  """INSERT INTO defense (`Team names`, `D_FGM`, `D_FGA`, `D_FG_PCT`, `E_DEF_RATING`)
+                        VALUES (%s, %s, %s, %s, %s);"""
 
-    defense_data_tuple = [tuple(defense) for defense in defenseDF.to_numpy()]
+    defense_data_tuple = [tuple(defense) for defense in defense_df.to_numpy()]
     try:
         cursor_obj = db_connection.cursor()
         cursor_obj.executemany(sql_statement, defense_data_tuple)
@@ -371,6 +408,7 @@ def defense_insertions(db_connection, defenseDF):
         print(rf'The following error has occurred: {e}')
 
 
+#Testing lines if script run as main.
 
 if __name__ == 'main':
     seasons = []
@@ -386,13 +424,12 @@ if __name__ == 'main':
 
     teams_list = df.get('TEAM_NAME').values
     fg3a_list = df.get('FG3A').values
-    efgpct_list = df.get('EFG_PCT').values
-    fgpct_list = df.get('FG_PCT').values
     fg3pct_list = df.get('FG3_PCT').values
     ftpct_list = df.get('FT_PCT').values
     fta_list = df.get('FTA').values
     fg2a_list = df.get('FG2A').values
     fg2pct_list = df.get('FG2_PCT').values
+    efgpct_list = df.get('EFG_PCT').values
     wins_list = df.get('W').values
 
     pts_list = df.get('PTS').values
@@ -400,7 +437,6 @@ if __name__ == 'main':
     reb_list = df.get('REB').values
     stl_list = df.get('STL').values
     blk_list = df.get('BLK').values
-    to_list = df.get('TOV').values
 
     print('Username?')
     user = input()
@@ -408,21 +444,21 @@ if __name__ == 'main':
     print('Password?')
     passwd = input()
 
-    db_conn = databaseConnection(user, passwd)
+    db_conn = database_connection(user, passwd)
     team_names(db_conn)
     points(db_conn)
-    stats(db_conn)
+    core_metrics(db_conn)
     defense(db_conn)
 
     merged_df = curr_season_data_df('2024-25')
 
     teams_df = merged_df.get(['TEAM_NAME', 'Conference', 'Logos', 'W'])
     points_df = merged_df.get(['TEAM_NAME', 'FG3A', 'FG3_PCT', 'FG2A', 'FG2_PCT', 'FTA', 'FT_PCT', 'FG_PCT', 'EFG_PCT'])
-    stats_df = merged_df.get(['TEAM_NAME', 'AST', 'REB', 'BLK', 'STL'])
+    core_metrics_df = merged_df.get(['TEAM_NAME', 'AST', 'REB', 'BLK', 'STL'])
     defense_df = merged_df.get(
         ['TEAM_NAME', 'D_FGM', 'D_FGA', 'D_FG_PCT', 'NORMAL_FG_PCT', 'PLUS_MINUS', 'E_DEF_RATING'])
 
     team_names_insertions(db_conn, teams_df)
     points_insertions(db_conn, points_df)
-    stats_insertions(db_conn, stats_df)
+    core_metrics_insertion(db_conn, core_metrics_df)
     defense_insertions(db_conn, defense_df)
