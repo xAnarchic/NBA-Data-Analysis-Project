@@ -129,7 +129,7 @@ def multiple_linear_regression_model(fg3a_list, fg2a_list, efgpct_list, fta_list
     x = data_x
     y = data_y
 
-    # Splits the data, where 70% forms the testing dataset and 70% forms the dataset that will train the model.
+    # Splits the data, where 30% forms the testing dataset and 70% forms the dataset that will train the model.
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.3, random_state= 0)
 
     # The regression model is trained using the training dataset.
